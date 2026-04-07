@@ -9,6 +9,8 @@ TAILSCALE_HOSTNAME="${TAILSCALE_HOSTNAME:-}"
 TAILSCALE_ACCEPT_ROUTES="${TAILSCALE_ACCEPT_ROUTES:-true}"
 TAILSCALE_INSTALL_ON_BOOT="${TAILSCALE_INSTALL_ON_BOOT:-true}"
 TAILSCALE_ENABLE_PROXY_ENV="${TAILSCALE_ENABLE_PROXY_ENV:-true}"
+TAILSCALE_FATAL_ON_FAILURE="${TAILSCALE_FATAL_ON_FAILURE:-false}"
+TAILSCALE_LOG_FILE="${TAILSCALE_LOG_FILE:-${TAILSCALE_STATE_DIR}/tailscaled.log}"
 
 log() {
   printf '[entrypoint] %s\n' "$*"
@@ -37,8 +39,7 @@ start_tailscale() {
       --tun=userspace-networking \
       --state="${TAILSCALE_STATE_DIR}/tailscaled.state" \
       --socket="$TAILSCALE_SOCKET" \
-      --socks5-server="$TAILSCALE_SOCKS_ADDR" \
-      --outbound-http-proxy-listen="$TAILSCALE_SOCKS_ADDR" >/tmp/tailscaled.log 2>&1 &
+      --socks5-server="$TAILSCALE_SOCKS_ADDR" >"$TAILSCALE_LOG_FILE" 2>&1 &
 
     local ready=0
     for _ in $(seq 1 40); do
@@ -50,7 +51,11 @@ start_tailscale() {
     done
 
     if [ "$ready" -ne 1 ]; then
-      log "tailscaled failed to start (see /tmp/tailscaled.log)"
+      log "tailscaled failed to start"
+      if [ -f "$TAILSCALE_LOG_FILE" ]; then
+        log "tailscaled log tail:"
+        tail -n 80 "$TAILSCALE_LOG_FILE" | sed 's/^/[tailscaled] /'
+      fi
       return 1
     fi
   fi
@@ -83,8 +88,13 @@ start_tailscale() {
 }
 
 if [ -n "$TAILSCALE_AUTH_KEY" ]; then
-  install_tailscale_if_missing
-  start_tailscale
+  if ! install_tailscale_if_missing || ! start_tailscale; then
+    if [ "$TAILSCALE_FATAL_ON_FAILURE" = "true" ]; then
+      log "tailscale setup failed and TAILSCALE_FATAL_ON_FAILURE=true; exiting"
+      exit 1
+    fi
+    log "tailscale setup failed; continuing without tailscale"
+  fi
 else
   log "TAILSCALE_AUTH_KEY not set; running without tailscale"
 fi

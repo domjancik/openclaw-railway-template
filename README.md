@@ -125,6 +125,8 @@ The server watches `/data/.env` for changes — including ones written by the Op
 | `TAILSCALE_ENABLE_PROXY_ENV`| Networking | `true`/`false` (default `true`) exports `ALL_PROXY`/`HTTP_PROXY`/`HTTPS_PROXY`                                                  |
 | `TAILSCALE_SOCKS_ADDR`     | Networking  | Proxy listen address (default `127.0.0.1:1055`)                                                                                  |
 | `TAILSCALE_STATE_DIR`      | Networking  | State dir persisted on volume (default `/data/.tailscale`)                                                                       |
+| `TAILSCALE_LOG_FILE`       | Networking  | Tailscaled log file path (default `/data/.tailscale/tailscaled.log`)                                                             |
+| `TAILSCALE_FATAL_ON_FAILURE`| Networking | `true`/`false` (default `false`) fail container if Tailscale setup fails                                                         |
 
 ## Architecture
 
@@ -209,6 +211,7 @@ http://my-ollama-node.tailnet-name.ts.net:11434/v1
 Notes:
 
 - If `TAILSCALE_AUTH_KEY` is unset, startup behavior is unchanged.
+- If Tailscale setup fails, container now continues by default (`TAILSCALE_FATAL_ON_FAILURE=false`) and prints `tailscaled` log tail to deploy logs.
 - Tailscale state persists in the Railway volume under `/data/.tailscale`.
 
 ## Browser Runtime
