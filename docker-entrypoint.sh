@@ -33,7 +33,7 @@ install_tailscale_if_missing() {
 start_tailscale() {
   mkdir -p "$TAILSCALE_STATE_DIR"
 
-  if ! tailscale --socket="$TAILSCALE_SOCKET" status >/dev/null 2>&1; then
+  if ! tailscale --socket="$TAILSCALE_SOCKET" version >/dev/null 2>&1; then
     log "starting tailscaled in userspace mode"
     tailscaled \
       --tun=userspace-networking \
@@ -43,7 +43,7 @@ start_tailscale() {
 
     local ready=0
     for _ in $(seq 1 40); do
-      if tailscale --socket="$TAILSCALE_SOCKET" status >/dev/null 2>&1; then
+      if tailscale --socket="$TAILSCALE_SOCKET" version >/dev/null 2>&1; then
         ready=1
         break
       fi
@@ -75,7 +75,22 @@ start_tailscale() {
   fi
 
   log "bringing tailscale up"
-  tailscale "${up_args[@]}"
+  local up_ok=0
+  for _ in $(seq 1 8); do
+    if tailscale "${up_args[@]}"; then
+      up_ok=1
+      break
+    fi
+    sleep 1
+  done
+  if [ "$up_ok" -ne 1 ]; then
+    log "tailscale up failed after retries"
+    if [ -f "$TAILSCALE_LOG_FILE" ]; then
+      log "tailscaled log tail:"
+      tail -n 80 "$TAILSCALE_LOG_FILE" | sed 's/^/[tailscaled] /'
+    fi
+    return 1
+  fi
 
   if [ "$TAILSCALE_ENABLE_PROXY_ENV" = "true" ]; then
     export ALL_PROXY="socks5://${TAILSCALE_SOCKS_ADDR}/"
