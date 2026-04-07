@@ -35,6 +35,7 @@ start_tailscale() {
 
   if ! tailscale --socket="$TAILSCALE_SOCKET" status --json >/dev/null 2>&1; then
     log "starting tailscaled in userspace mode"
+    log "tailscaled logs: $TAILSCALE_LOG_FILE"
     tailscaled \
       --tun=userspace-networking \
       --state="${TAILSCALE_STATE_DIR}/tailscaled.state" \
@@ -91,6 +92,9 @@ start_tailscale() {
     fi
     return 1
   fi
+
+  log "tailscale status after up:"
+  tailscale --socket="$TAILSCALE_SOCKET" status || true
 
   if [ "$TAILSCALE_ENABLE_PROXY_ENV" = "true" ]; then
     export ALL_PROXY="socks5://${TAILSCALE_SOCKS_ADDR}/"
