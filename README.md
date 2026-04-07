@@ -211,6 +211,13 @@ Notes:
 - If `TAILSCALE_AUTH_KEY` is unset, startup behavior is unchanged.
 - Tailscale state persists in the Railway volume under `/data/.tailscale`.
 
+## Browser Runtime
+
+This template now installs Chromium in the container for browser-capable OpenClaw tools.
+
+- Chromium binary: `/usr/bin/chromium`
+- Exported env vars: `CHROME_BIN` and `PUPPETEER_EXECUTABLE_PATH`
+
 ### Gateway management
 
 - **Status**: The setup UI checks if the gateway is listening on its port in real-time
