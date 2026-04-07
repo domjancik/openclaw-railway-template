@@ -33,7 +33,7 @@ install_tailscale_if_missing() {
 start_tailscale() {
   mkdir -p "$TAILSCALE_STATE_DIR"
 
-  if ! tailscale --socket="$TAILSCALE_SOCKET" version >/dev/null 2>&1; then
+  if ! tailscale --socket="$TAILSCALE_SOCKET" status --json >/dev/null 2>&1; then
     log "starting tailscaled in userspace mode"
     tailscaled \
       --tun=userspace-networking \
@@ -42,12 +42,12 @@ start_tailscale() {
       --socks5-server="$TAILSCALE_SOCKS_ADDR" >"$TAILSCALE_LOG_FILE" 2>&1 &
 
     local ready=0
-    for _ in $(seq 1 40); do
-      if tailscale --socket="$TAILSCALE_SOCKET" version >/dev/null 2>&1; then
+    for _ in $(seq 1 80); do
+      if tailscale --socket="$TAILSCALE_SOCKET" status --json >/dev/null 2>&1; then
         ready=1
         break
       fi
-      sleep 0.25
+      sleep 0.5
     done
 
     if [ "$ready" -ne 1 ]; then
