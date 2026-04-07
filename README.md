@@ -118,6 +118,13 @@ The server watches `/data/.env` for changes — including ones written by the Op
 | `TELEGRAM_BOT_TOKEN`       | Channels    | From [@BotFather](https://t.me/BotFather) · [full guide](https://docs.openclaw.ai/channels/telegram)                           |
 | `DISCORD_BOT_TOKEN`        | Channels    | From [Developer Portal](https://discord.com/developers/applications) · [full guide](https://docs.openclaw.ai/channels/discord) |
 | `BRAVE_API_KEY`            | Tools       | From [brave.com/search/api](https://brave.com/search/api/) — free tier available                                               |
+| `TAILSCALE_AUTH_KEY`       | Networking  | Enables optional Tailscale startup when set (`tskey-auth-...`)                                                                  |
+| `TAILSCALE_HOSTNAME`       | Networking  | Optional hostname for this node in your tailnet                                                                                  |
+| `TAILSCALE_ACCEPT_ROUTES`  | Networking  | `true`/`false` (default `true`)                                                                                                  |
+| `TAILSCALE_INSTALL_ON_BOOT`| Networking  | `true`/`false` (default `true`) install Tailscale if binary is missing                                                           |
+| `TAILSCALE_ENABLE_PROXY_ENV`| Networking | `true`/`false` (default `true`) exports `ALL_PROXY`/`HTTP_PROXY`/`HTTPS_PROXY`                                                  |
+| `TAILSCALE_SOCKS_ADDR`     | Networking  | Proxy listen address (default `127.0.0.1:1055`)                                                                                  |
+| `TAILSCALE_STATE_DIR`      | Networking  | State dir persisted on volume (default `/data/.tailscale`)                                                                       |
 
 ## Architecture
 
@@ -166,6 +173,43 @@ Internet → Railway :3000 (Express)
 1. `/data/.env` is loaded, bootstrap prompt templates are synced into `workspace/hooks/bootstrap`, and channel config is synced to match available tokens
 2. Gateway starts
 3. Setup UI available at `/` for managing env vars, channels, and pairings
+
+## Optional Tailscale Networking
+
+You can connect this Railway node to your tailnet to reach private LLM workloads (Ollama, vLLM, LM Studio, or OpenAI-compatible endpoints running on other machines in your tailnet).
+
+How it works in this template:
+
+1. At container startup, if `TAILSCALE_AUTH_KEY` is set, the entrypoint starts `tailscaled` in userspace mode.
+2. It runs `tailscale up` with your auth key (and optional hostname/routes flags).
+3. It exports proxy env vars so app egress can use Tailscale (`ALL_PROXY`, `HTTP_PROXY`, `HTTPS_PROXY`).
+
+Minimal Railway variables:
+
+```env
+TAILSCALE_AUTH_KEY=tskey-auth-xxxxxxxx
+TAILSCALE_HOSTNAME=openclaw-railway
+```
+
+Recommended (explicit):
+
+```env
+TAILSCALE_ACCEPT_ROUTES=true
+TAILSCALE_ENABLE_PROXY_ENV=true
+TAILSCALE_STATE_DIR=/data/.tailscale
+TAILSCALE_SOCKS_ADDR=127.0.0.1:1055
+```
+
+After deploy, point your OpenAI-compatible base URL to the tailnet host, for example:
+
+```text
+http://my-ollama-node.tailnet-name.ts.net:11434/v1
+```
+
+Notes:
+
+- If `TAILSCALE_AUTH_KEY` is unset, startup behavior is unchanged.
+- Tailscale state persists in the Railway volume under `/data/.tailscale`.
 
 ### Gateway management
 
