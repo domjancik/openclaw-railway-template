@@ -5,6 +5,7 @@ TAILSCALE_AUTH_KEY="${TAILSCALE_AUTH_KEY:-}"
 TAILSCALE_STATE_DIR="${TAILSCALE_STATE_DIR:-/data/.tailscale}"
 TAILSCALE_SOCKET="${TAILSCALE_SOCKET:-${TAILSCALE_STATE_DIR}/tailscaled.sock}"
 TAILSCALE_SOCKS_ADDR="${TAILSCALE_SOCKS_ADDR:-127.0.0.1:1055}"
+TAILSCALE_HTTP_PROXY_ADDR="${TAILSCALE_HTTP_PROXY_ADDR:-127.0.0.1:1056}"
 TAILSCALE_HOSTNAME="${TAILSCALE_HOSTNAME:-}"
 TAILSCALE_ACCEPT_ROUTES="${TAILSCALE_ACCEPT_ROUTES:-true}"
 TAILSCALE_INSTALL_ON_BOOT="${TAILSCALE_INSTALL_ON_BOOT:-true}"
@@ -40,7 +41,8 @@ start_tailscale() {
       --tun=userspace-networking \
       --state="${TAILSCALE_STATE_DIR}/tailscaled.state" \
       --socket="$TAILSCALE_SOCKET" \
-      --socks5-server="$TAILSCALE_SOCKS_ADDR" >"$TAILSCALE_LOG_FILE" 2>&1 &
+      --socks5-server="$TAILSCALE_SOCKS_ADDR" \
+      --outbound-http-proxy-listen="$TAILSCALE_HTTP_PROXY_ADDR" >"$TAILSCALE_LOG_FILE" 2>&1 &
 
     local ready=0
     for _ in $(seq 1 80); do
@@ -98,11 +100,13 @@ start_tailscale() {
 
   if [ "$TAILSCALE_ENABLE_PROXY_ENV" = "true" ]; then
     export ALL_PROXY="socks5://${TAILSCALE_SOCKS_ADDR}/"
-    export HTTP_PROXY="http://${TAILSCALE_SOCKS_ADDR}/"
-    export HTTPS_PROXY="http://${TAILSCALE_SOCKS_ADDR}/"
+    export HTTP_PROXY="http://${TAILSCALE_HTTP_PROXY_ADDR}/"
+    export HTTPS_PROXY="http://${TAILSCALE_HTTP_PROXY_ADDR}/"
     export http_proxy="$HTTP_PROXY"
     export https_proxy="$HTTPS_PROXY"
-    log "exported proxy env vars for app traffic via tailscale (${TAILSCALE_SOCKS_ADDR})"
+    export NO_PROXY="${NO_PROXY:-127.0.0.1,localhost,::1}"
+    export no_proxy="$NO_PROXY"
+    log "exported proxy env vars via tailscale (socks=${TAILSCALE_SOCKS_ADDR}, http=${TAILSCALE_HTTP_PROXY_ADDR})"
   fi
 }
 

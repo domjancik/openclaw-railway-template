@@ -124,6 +124,7 @@ The server watches `/data/.env` for changes — including ones written by the Op
 | `TAILSCALE_INSTALL_ON_BOOT`| Networking  | `true`/`false` (default `true`) install Tailscale if binary is missing                                                           |
 | `TAILSCALE_ENABLE_PROXY_ENV`| Networking | `true`/`false` (default `true`) exports `ALL_PROXY`/`HTTP_PROXY`/`HTTPS_PROXY`                                                  |
 | `TAILSCALE_SOCKS_ADDR`     | Networking  | Proxy listen address (default `127.0.0.1:1055`)                                                                                  |
+| `TAILSCALE_HTTP_PROXY_ADDR`| Networking  | HTTP proxy listen address (default `127.0.0.1:1056`)                                                                              |
 | `TAILSCALE_STATE_DIR`      | Networking  | State dir persisted on volume (default `/data/.tailscale`)                                                                       |
 | `TAILSCALE_LOG_FILE`       | Networking  | Tailscaled log file path (default `/data/.tailscale/tailscaled.log`)                                                             |
 | `TAILSCALE_FATAL_ON_FAILURE`| Networking | `true`/`false` (default `false`) fail container if Tailscale setup fails                                                         |
@@ -200,6 +201,7 @@ TAILSCALE_ACCEPT_ROUTES=true
 TAILSCALE_ENABLE_PROXY_ENV=true
 TAILSCALE_STATE_DIR=/data/.tailscale
 TAILSCALE_SOCKS_ADDR=127.0.0.1:1055
+TAILSCALE_HTTP_PROXY_ADDR=127.0.0.1:1056
 ```
 
 After deploy, point your OpenAI-compatible base URL to the tailnet host, for example:
