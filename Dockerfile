@@ -18,6 +18,8 @@ COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY openclaw-shim.sh /usr/local/bin/openclaw
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/openclaw
+RUN if [ -x /app/node_modules/.bin/openclaw ]; then mv /app/node_modules/.bin/openclaw /app/node_modules/.bin/openclaw.real; fi \
+  && ln -sf /usr/local/bin/openclaw /app/node_modules/.bin/openclaw
 
 EXPOSE 3000
 
