@@ -5,7 +5,9 @@ RUN apt-get update && apt-get install -y git curl procps python3 make g++ cron c
 WORKDIR /app
 
 COPY package.json ./
+COPY scripts/patch-alphaclaw-openclaw-version.js /tmp/patch-alphaclaw-openclaw-version.js
 RUN npm install --omit=dev --prefer-online && npm cache clean --force
+RUN node /tmp/patch-alphaclaw-openclaw-version.js
 
 ENV PATH="/usr/local/bin:/app/node_modules/.bin:$PATH"
 ENV ALPHACLAW_ROOT_DIR=/data

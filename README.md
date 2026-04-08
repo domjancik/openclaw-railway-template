@@ -229,6 +229,17 @@ This template now installs Chromium in the container for browser-capable OpenCla
 - Chromium binary: `/usr/bin/chromium`
 - Exported env vars: `CHROME_BIN` and `PUPPETEER_EXECUTABLE_PATH`
 
+## Stability patch
+
+This template applies a build-time patch to `@chrysb/alphaclaw`:
+
+- File: `lib/server/openclaw-version.js`
+- Behavior: `openclaw update status --json` timeouts (`ETIMEDOUT`) are treated as non-fatal cached-status responses instead of throwing and crashing the launcher.
+
+The patch is applied in Docker build via:
+
+- `scripts/patch-alphaclaw-openclaw-version.js`
+
 ### Gateway management
 
 - **Status**: The setup UI checks if the gateway is listening on its port in real-time
@@ -295,6 +306,25 @@ Optional overrides:
 - `RAILWAY_SERVICE` (default `openclaw-railway-template`)
 - `RAILWAY_ENVIRONMENT` (default `production`)
 - `RAILWAY_LOG_LINES` (default `300`)
+
+### Optional railtail sidecar (local/dev)
+
+`docker-compose` includes an optional `railtail` service profile for tailnet forwarding:
+
+```bash
+docker compose --profile railtail up --build
+```
+
+Set these env vars:
+
+- `RAILTAIL_TARGET_ADDR` (example: `http://desktop-a8tmsu2.tail65b2b7.ts.net:11434`)
+- `RAILTAIL_TS_HOSTNAME`
+- `RAILTAIL_TS_AUTH_KEY`
+- `RAILTAIL_LISTEN_PORT` (default `11434`)
+
+Then point OpenAI-compatible base URL to:
+
+- `http://railtail:${RAILTAIL_LISTEN_PORT}/v1` (from within compose network)
 
 ### Railway wait helper
 

@@ -9,5 +9,22 @@ services:
       # Persistent data survives container restarts (like Railway volumes)
       - openclaw-data:/data
 
+  railtail:
+    image: ghcr.io/half0wl/railtail:latest
+    restart: unless-stopped
+    environment:
+      # Required for railtail:
+      # - TARGET_ADDR (for example: http://desktop-a8tmsu2.tail65b2b7.ts.net:11434)
+      # - TS_HOSTNAME
+      # - TS_AUTH_KEY
+      TARGET_ADDR: ${RAILTAIL_TARGET_ADDR:-}
+      TS_HOSTNAME: ${RAILTAIL_TS_HOSTNAME:-railtail}
+      TS_AUTH_KEY: ${RAILTAIL_TS_AUTH_KEY:-}
+      LISTEN_PORT: ${RAILTAIL_LISTEN_PORT:-11434}
+    ports:
+      - "${RAILTAIL_LISTEN_PORT:-11434}:${RAILTAIL_LISTEN_PORT:-11434}"
+    profiles:
+      - railtail
+
 volumes:
   openclaw-data:
