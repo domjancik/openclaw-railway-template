@@ -15,7 +15,8 @@ const ENV_PATH = path.join(ROOT, ".env");
 
 const OIDC_CONFIG_URL =
   "https://backboard.railway.com/oauth/.well-known/openid-configuration";
-const DEFAULT_SCOPE = "openid email profile offline_access";
+const DEFAULT_SCOPE =
+  "openid email profile offline_access workspace:viewer project:viewer";
 
 function parseEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return {};
@@ -189,6 +190,7 @@ async function runLogin() {
   const clientId = getenv("RAILWAY_CLIENT_ID", env);
   const clientSecret = getenv("RAILWAY_CLIENT_SECRET", env);
   const redirectUri = getenv("RAILWAY_REDIRECT_URI", env);
+  const scope = getenv("RAILWAY_OAUTH_SCOPE", env) || DEFAULT_SCOPE;
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error(
@@ -205,7 +207,7 @@ async function runLogin() {
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("scope", DEFAULT_SCOPE);
+  authUrl.searchParams.set("scope", scope);
   authUrl.searchParams.set("state", state);
   authUrl.searchParams.set("code_challenge", pkce.challenge);
   authUrl.searchParams.set("code_challenge_method", "S256");
@@ -286,7 +288,7 @@ async function runLogin() {
     provider: "railway",
     oidcIssuer: oidc.issuer,
     redirectUri,
-    scopes: DEFAULT_SCOPE,
+    scopes: scope,
     token,
   });
 

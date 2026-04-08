@@ -260,6 +260,7 @@ To authenticate a local Railway OAuth session (for debugging and API access from
    - `RAILWAY_CLIENT_ID`
    - `RAILWAY_CLIENT_SECRET`
    - `RAILWAY_REDIRECT_URI=http://127.0.0.1:4444/callback`
+   - optional `RAILWAY_OAUTH_SCOPE` (defaults to `openid email profile offline_access workspace:viewer project:viewer`)
 2. Run:
 
 ```bash
