@@ -11,7 +11,8 @@
     "dev:shell": "docker compose exec openclaw bash",
     "railway:oauth": "node scripts/railway-oauth.js",
     "railway:projects": "node scripts/railway-list-projects.js",
-    "railway:logs": "node scripts/railway-logs.js"
+    "railway:logs": "node scripts/railway-logs.js",
+    "railway:wait": "node scripts/railway-wait.js"
   },
   "dependencies": {
     "@chrysb/alphaclaw": "0.8.7",

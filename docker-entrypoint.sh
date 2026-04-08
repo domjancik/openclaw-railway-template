@@ -67,14 +67,11 @@ start_tailscale() {
     "--socket=$TAILSCALE_SOCKET"
     "up"
     "--authkey=$TAILSCALE_AUTH_KEY"
+    "--accept-routes=$TAILSCALE_ACCEPT_ROUTES"
   )
 
   if [ -n "$TAILSCALE_HOSTNAME" ]; then
     up_args+=("--hostname=$TAILSCALE_HOSTNAME")
-  fi
-
-  if [ "$TAILSCALE_ACCEPT_ROUTES" = "true" ]; then
-    up_args+=("--accept-routes")
   fi
 
   log "bringing tailscale up"

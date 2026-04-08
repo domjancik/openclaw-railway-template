@@ -291,6 +291,21 @@ Optional overrides:
 - `RAILWAY_ENVIRONMENT` (default `production`)
 - `RAILWAY_LOG_LINES` (default `300`)
 
+### Railway wait helper
+
+To wait for the current deployment to finish and then print fresh logs automatically:
+
+```bash
+npm run railway:wait
+```
+
+Optional overrides:
+- `RAILWAY_WAIT_TIMEOUT_MS` (default `900000` = 15 minutes)
+- `RAILWAY_WAIT_POLL_MS` (default `10000`)
+- `RAILWAY_SERVICE` (default `openclaw-railway-template`)
+- `RAILWAY_ENVIRONMENT` (default `production`)
+- `RAILWAY_LOG_LINES` (default `300`)
+
 ## Links
 
 - [OpenClaw docs](https://docs.openclaw.ai)
