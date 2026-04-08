@@ -252,6 +252,29 @@ First time you DM the bot, it sends a pairing request. Approve it in the setup U
 
 The channel's env var is empty or missing. Go to the Envars tab, add the token, and save. The channel will be automatically enabled in the config.
 
+### Railway OAuth local auth helper
+
+To authenticate a local Railway OAuth session (for debugging and API access from this workspace):
+
+1. Ensure `.env` contains:
+   - `RAILWAY_CLIENT_ID`
+   - `RAILWAY_CLIENT_SECRET`
+   - `RAILWAY_REDIRECT_URI=http://127.0.0.1:4444/callback`
+2. Run:
+
+```bash
+npm run railway:oauth
+```
+
+3. Open the printed authorize URL in your browser and complete Railway login/consent.
+4. After callback completes, the encrypted session is stored at:
+   - `.secrets/railway-oauth-session.enc.json`
+   - encryption key: `.secrets/railway-oauth.key`
+
+Notes:
+- `.secrets/` is gitignored.
+- Keep `.secrets/railway-oauth.key` private; it decrypts your local session file.
+
 ## Links
 
 - [OpenClaw docs](https://docs.openclaw.ai)

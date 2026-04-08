@@ -8,7 +8,8 @@
     "dev:stop": "docker compose down",
     "dev:clean": "docker compose down -v",
     "dev:logs": "docker compose logs -f",
-    "dev:shell": "docker compose exec openclaw bash"
+    "dev:shell": "docker compose exec openclaw bash",
+    "railway:oauth": "node scripts/railway-oauth.js"
   },
   "dependencies": {
     "@chrysb/alphaclaw": "0.8.7",
