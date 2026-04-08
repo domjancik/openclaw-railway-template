@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --omit=dev --prefer-online && npm cache clean --force
 
-ENV PATH="/app/node_modules/.bin:$PATH"
+ENV PATH="/usr/local/bin:/app/node_modules/.bin:$PATH"
 ENV ALPHACLAW_ROOT_DIR=/data
 ENV CHROME_BIN=/usr/bin/chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
@@ -15,7 +15,9 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 RUN mkdir -p /data
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY openclaw-shim.sh /usr/local/bin/openclaw
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/openclaw
 
 EXPOSE 3000
 

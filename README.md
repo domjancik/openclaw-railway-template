@@ -129,6 +129,7 @@ The server watches `/data/.env` for changes — including ones written by the Op
 | `TAILSCALE_STATE_DIR`      | Networking  | State dir persisted on volume (default `/data/.tailscale`)                                                                       |
 | `TAILSCALE_LOG_FILE`       | Networking  | Tailscaled log file path (default `/data/.tailscale/tailscaled.log`)                                                             |
 | `TAILSCALE_FATAL_ON_FAILURE`| Networking | `true`/`false` (default `false`) fail container if Tailscale setup fails                                                         |
+| `OPENCLAW_UPDATE_STATUS_TIMEOUT` | Runtime | Seconds for `openclaw update status` in shim (default `5`)                                                                    |
 
 ## Architecture
 
@@ -219,6 +220,7 @@ Notes:
 - `TAILSCALE_ACCEPT_ROUTES` defaults to `false` to avoid unexpected route hijacking.
 - `TAILSCALE_ACCEPT_DNS` defaults to `false` to avoid DNS side effects in managed runtimes.
 - Tailscale state persists in the Railway volume under `/data/.tailscale`.
+- `OPENCLAW_UPDATE_STATUS_TIMEOUT` lets you tune the wrapper timeout for update-status checks without changing other OpenClaw commands.
 
 ## Browser Runtime
 
