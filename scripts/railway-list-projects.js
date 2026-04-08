@@ -9,9 +9,32 @@ const ROOT = process.cwd();
 const SECRETS_DIR = path.join(ROOT, ".secrets");
 const KEY_PATH = path.join(SECRETS_DIR, "railway-oauth.key");
 const SESSION_PATH = path.join(SECRETS_DIR, "railway-oauth-session.enc.json");
+const ENV_PATH = path.join(ROOT, ".env");
 const GRAPHQL_ENDPOINT =
   process.env.RAILWAY_GRAPHQL_ENDPOINT ||
   "https://backboard.railway.com/graphql/v2";
+
+function parseEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return {};
+  const out = {};
+  const content = fs.readFileSync(filePath, "utf8");
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const idx = line.indexOf("=");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    let val = line.slice(idx + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    out[key] = val;
+  }
+  return out;
+}
 
 function loadKey() {
   if (!fs.existsSync(KEY_PATH)) {
@@ -67,21 +90,45 @@ async function graphqlRequest(token, query, variables = {}) {
 }
 
 function pickProjects(data) {
+  if (data?.project?.id) {
+    return [data.project];
+  }
   if (data?.projects?.edges) {
     return data.projects.edges.map((e) => e.node).filter(Boolean);
   }
   if (data?.me?.projects?.edges) {
     return data.me.projects.edges.map((e) => e.node).filter(Boolean);
   }
+  if (data?.me?.workspaces?.edges) {
+    const out = [];
+    for (const edge of data.me.workspaces.edges) {
+      const ws = edge?.node;
+      const projects = ws?.projects?.edges || [];
+      for (const p of projects) {
+        if (p?.node) out.push(p.node);
+      }
+    }
+    return out;
+  }
   return [];
 }
 
 async function main() {
-  const session = decryptSession();
-  const token = session?.token?.access_token;
+  const env = parseEnvFile(ENV_PATH);
+  const envToken = process.env.RAILWAY_TOKEN || env.RAILWAY_TOKEN || "";
+  let token = envToken;
+  let grantedScope = "unknown (RAILWAY_TOKEN)";
   if (!token) {
-    throw new Error("No access_token found in decrypted OAuth session.");
+    const session = decryptSession();
+    token = session?.token?.access_token;
+    if (!token) {
+      throw new Error(
+        "No RAILWAY_TOKEN in .env and no access_token found in encrypted OAuth session.",
+      );
+    }
+    grantedScope = session?.token?.scope || session?.scopes || "unknown";
   }
+  console.log(`Granted scopes: ${grantedScope}`);
 
   const meQuery = `
     query Me {
@@ -94,6 +141,14 @@ async function main() {
   `;
 
   const projectQueries = [
+    `
+      query ProjectContext {
+        project {
+          id
+          name
+        }
+      }
+    `,
     `
       query Projects {
         projects {
@@ -120,13 +175,37 @@ async function main() {
         }
       }
     `,
+    `
+      query MeWorkspaceProjects {
+        me {
+          workspaces {
+            edges {
+              node {
+                id
+                name
+                projects {
+                  edges {
+                    node {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `,
   ];
 
   const meRes = await graphqlRequest(token, meQuery);
   const me = meRes?.data?.me;
-  console.log(
-    `Authenticated as: ${me?.name || "unknown"} <${me?.email || "unknown"}>`,
-  );
+  if (me) {
+    console.log(`Authenticated as: ${me.name || "unknown"} <${me.email || "unknown"}>`);
+  } else {
+    console.log("Authenticated as: project-scoped token (no user profile)");
+  }
 
   let projects = [];
   let lastErr = null;

@@ -120,7 +120,7 @@ The server watches `/data/.env` for changes — including ones written by the Op
 | `BRAVE_API_KEY`            | Tools       | From [brave.com/search/api](https://brave.com/search/api/) — free tier available                                               |
 | `TAILSCALE_AUTH_KEY`       | Networking  | Enables optional Tailscale startup when set (`tskey-auth-...`)                                                                  |
 | `TAILSCALE_HOSTNAME`       | Networking  | Optional hostname for this node in your tailnet                                                                                  |
-| `TAILSCALE_ACCEPT_ROUTES`  | Networking  | `true`/`false` (default `true`)                                                                                                  |
+| `TAILSCALE_ACCEPT_ROUTES`  | Networking  | `true`/`false` (default `false`)                                                                                                 |
 | `TAILSCALE_INSTALL_ON_BOOT`| Networking  | `true`/`false` (default `true`) install Tailscale if binary is missing                                                           |
 | `TAILSCALE_ENABLE_PROXY_ENV`| Networking | `true`/`false` (default `true`) exports `ALL_PROXY`/`HTTP_PROXY`/`HTTPS_PROXY`                                                  |
 | `TAILSCALE_SOCKS_ADDR`     | Networking  | Proxy listen address (default `127.0.0.1:1055`)                                                                                  |
@@ -197,7 +197,7 @@ TAILSCALE_HOSTNAME=openclaw-railway
 Recommended (explicit):
 
 ```env
-TAILSCALE_ACCEPT_ROUTES=true
+TAILSCALE_ACCEPT_ROUTES=false
 TAILSCALE_ENABLE_PROXY_ENV=true
 TAILSCALE_STATE_DIR=/data/.tailscale
 TAILSCALE_SOCKS_ADDR=127.0.0.1:1055
@@ -214,6 +214,7 @@ Notes:
 
 - If `TAILSCALE_AUTH_KEY` is unset, startup behavior is unchanged.
 - If Tailscale setup fails, container now continues by default (`TAILSCALE_FATAL_ON_FAILURE=false`) and prints `tailscaled` log tail to deploy logs.
+- `TAILSCALE_ACCEPT_ROUTES` defaults to `false` to avoid unexpected route hijacking.
 - Tailscale state persists in the Railway volume under `/data/.tailscale`.
 
 ## Browser Runtime
@@ -275,6 +276,20 @@ npm run railway:oauth
 Notes:
 - `.secrets/` is gitignored.
 - Keep `.secrets/railway-oauth.key` private; it decrypts your local session file.
+
+### Railway logs helper
+
+To stream project logs using `RAILWAY_TOKEN` from `.env`:
+
+```bash
+npm run railway:logs
+npm run railway:logs -- --follow
+```
+
+Optional overrides:
+- `RAILWAY_SERVICE` (default `openclaw-railway-template`)
+- `RAILWAY_ENVIRONMENT` (default `production`)
+- `RAILWAY_LOG_LINES` (default `300`)
 
 ## Links
 

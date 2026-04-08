@@ -7,7 +7,7 @@ TAILSCALE_SOCKET="${TAILSCALE_SOCKET:-${TAILSCALE_STATE_DIR}/tailscaled.sock}"
 TAILSCALE_SOCKS_ADDR="${TAILSCALE_SOCKS_ADDR:-127.0.0.1:1055}"
 TAILSCALE_HTTP_PROXY_ADDR="${TAILSCALE_HTTP_PROXY_ADDR:-127.0.0.1:1056}"
 TAILSCALE_HOSTNAME="${TAILSCALE_HOSTNAME:-}"
-TAILSCALE_ACCEPT_ROUTES="${TAILSCALE_ACCEPT_ROUTES:-true}"
+TAILSCALE_ACCEPT_ROUTES="${TAILSCALE_ACCEPT_ROUTES:-false}"
 TAILSCALE_INSTALL_ON_BOOT="${TAILSCALE_INSTALL_ON_BOOT:-true}"
 TAILSCALE_ENABLE_PROXY_ENV="${TAILSCALE_ENABLE_PROXY_ENV:-true}"
 TAILSCALE_FATAL_ON_FAILURE="${TAILSCALE_FATAL_ON_FAILURE:-false}"
@@ -107,6 +107,10 @@ start_tailscale() {
     export NO_PROXY="${NO_PROXY:-127.0.0.1,localhost,::1}"
     export no_proxy="$NO_PROXY"
     log "exported proxy env vars via tailscale (socks=${TAILSCALE_SOCKS_ADDR}, http=${TAILSCALE_HTTP_PROXY_ADDR})"
+  else
+    # Ensure inherited proxy vars do not accidentally affect openclaw process.
+    unset ALL_PROXY HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
+    log "TAILSCALE_ENABLE_PROXY_ENV=false; proxy env vars are unset"
   fi
 }
 
