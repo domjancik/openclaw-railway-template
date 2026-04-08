@@ -27,7 +27,14 @@ function parseEnvFile(filePath) {
     const idx = line.indexOf("=");
     if (idx === -1) continue;
     const key = line.slice(0, idx).trim();
-    const val = line.slice(idx + 1).trim();
+    let val = line.slice(idx + 1).trim();
+    // Support quoted values in .env files.
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
     out[key] = val;
   }
   return out;
@@ -130,33 +137,51 @@ async function exchangeCodeForToken({
   clientSecret,
   codeVerifier,
 }) {
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: redirectUri,
-    client_id: clientId,
-    client_secret: clientSecret,
-    code_verifier: codeVerifier,
-  });
+  const methods = ["client_secret_basic", "client_secret_post", "none"];
+  const errors = [];
 
-  const resp = await fetch(tokenEndpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  });
-  const text = await resp.text();
-  let json;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    json = { raw: text };
-  }
-  if (!resp.ok) {
-    throw new Error(
-      `Token exchange failed: ${resp.status} ${resp.statusText} ${text}`,
+  for (const method of methods) {
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri,
+      client_id: clientId,
+      code_verifier: codeVerifier,
+    });
+    const headers = { "Content-Type": "application/x-www-form-urlencoded" };
+    if (method === "client_secret_basic") {
+      const basic = Buffer.from(`${clientId}:${clientSecret}`).toString(
+        "base64",
+      );
+      headers.Authorization = `Basic ${basic}`;
+    } else if (method === "client_secret_post") {
+      body.set("client_secret", clientSecret);
+    }
+
+    const resp = await fetch(tokenEndpoint, {
+      method: "POST",
+      headers,
+      body: body.toString(),
+    });
+
+    const text = await resp.text();
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      json = { raw: text };
+    }
+
+    if (resp.ok) {
+      return json;
+    }
+
+    errors.push(
+      `${method}: ${resp.status} ${resp.statusText} ${JSON.stringify(json)}`,
     );
   }
-  return json;
+
+  throw new Error(`Token exchange failed. Attempts: ${errors.join(" | ")}`);
 }
 
 async function runLogin() {
@@ -191,6 +216,18 @@ async function runLogin() {
   );
 
   const code = await new Promise((resolve, reject) => {
+    let done = false;
+    const finish = (fn, value) => {
+      if (done) return;
+      done = true;
+      try {
+        server.close();
+      } catch (_) {
+        // no-op
+      }
+      fn(value);
+    };
+
     const server = http.createServer((req, res) => {
       try {
         const incoming = new URL(
@@ -208,8 +245,7 @@ async function runLogin() {
           const desc = incoming.searchParams.get("error_description") || "";
           res.writeHead(400, { "Content-Type": "text/plain" });
           res.end("OAuth error received. Check terminal output.");
-          server.close();
-          reject(new Error(`OAuth error: ${err} ${desc}`));
+          finish(reject, new Error(`OAuth error: ${err} ${desc}`));
           return;
         }
 
@@ -218,22 +254,22 @@ async function runLogin() {
         if (!callbackCode || callbackState !== state) {
           res.writeHead(400, { "Content-Type": "text/plain" });
           res.end("Invalid callback state or missing code.");
-          server.close();
-          reject(new Error("Invalid callback state or missing code."));
+          finish(reject, new Error("Invalid callback state or missing code."));
           return;
         }
 
         res.writeHead(200, { "Content-Type": "text/plain" });
         res.end("Railway OAuth complete. You can close this tab.");
-        server.close();
-        resolve(callbackCode);
+        finish(resolve, callbackCode);
       } catch (err2) {
-        server.close();
-        reject(err2);
+        finish(reject, err2);
       }
     });
 
-    server.on("error", reject);
+    server.on("error", (err3) => finish(reject, err3));
+    server.on("close", () => {
+      if (!done) done = true;
+    });
     server.listen(redirect.port, redirect.host);
   });
 
